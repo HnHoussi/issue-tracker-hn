@@ -15,7 +15,7 @@ const NavBar = () => {
     ]
     return (
         <nav className="flex space-x-6 border-b mb-5 px-5 h-14 items-center">
-            <Link href="/" className='flex items-center mr-20'><SiOpenbugbounty />Hunter</Link>
+            <Link href="/" className='flex items-center mr-20 text-2xl font-bold'><SiOpenbugbounty/>Hunter</Link>
             <ul className="flex space-x-6">
                 {links.map(link =>
                     <Link
