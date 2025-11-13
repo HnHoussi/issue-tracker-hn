@@ -16,12 +16,6 @@ import SimpleMDE from "react-simplemde-editor";
 
 type IssueFormData = z.infer<typeof issueSchema>;
 
- // dynamically import SimpleMDE to avoid SSR "document is not defined"
-// const SimpleMDE = dynamic(
-//     () => import('react-simplemde-editor'), {
-//         ssr: false,
-//     });
-
 const IssueForm = ({issue}: {issue?: Issue}) => {
     const router = useRouter()
     const {register, control, handleSubmit, formState: {errors}} = useForm<IssueFormData>({
