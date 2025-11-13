@@ -1,6 +1,6 @@
 'use client'
 
-import {Button, Callout, Text, TextField} from '@radix-ui/themes';
+import {Button, Callout, TextField} from '@radix-ui/themes';
 import dynamic from 'next/dynamic';
 import {useForm, Controller} from 'react-hook-form';
 import axios from 'axios';
@@ -16,7 +16,8 @@ import Spinner from "@/app/components/Spinner";
 type IssueForm = z.infer<typeof createIssueSchema>;
 
 // dynamically import SimpleMDE to avoid SSR "document is not defined"
-const SimpleMDE = dynamic(() => import('react-simplemde-editor'), {
+const SimpleMDE = dynamic(
+    () => import('react-simplemde-editor'), {
     ssr: false,
 });
 
