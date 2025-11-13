@@ -1,32 +1,31 @@
 'use client'
 
 import {Button, Callout, TextField} from '@radix-ui/themes';
-import dynamic from 'next/dynamic';
 import {useForm, Controller} from 'react-hook-form';
 import axios from 'axios';
 import "easymde/dist/easymde.min.css"
 import {useRouter} from "next/navigation";
 import {useState} from "react";
 import {zodResolver} from "@hookform/resolvers/zod";
-import {createIssueSchema} from "@/app/validationSchemas";
+import {issueSchema} from "@/app/validationSchemas";
 import {z} from 'zod'
 import ErrorMessage from "@/app/components/ErrorMessage";
 import Spinner from "@/app/components/Spinner";
 import {Issue} from "@/app/generated/prisma/client";
+import SimpleMDE from "react-simplemde-editor";
 
+type IssueFormData = z.infer<typeof issueSchema>;
 
-type IssueFormData = z.infer<typeof createIssueSchema>;
-
-// dynamically import SimpleMDE to avoid SSR "document is not defined"
-const SimpleMDE = dynamic(
-    () => import('react-simplemde-editor'), {
-        ssr: false,
-    });
+ // dynamically import SimpleMDE to avoid SSR "document is not defined"
+// const SimpleMDE = dynamic(
+//     () => import('react-simplemde-editor'), {
+//         ssr: false,
+//     });
 
 const IssueForm = ({issue}: {issue?: Issue}) => {
     const router = useRouter()
     const {register, control, handleSubmit, formState: {errors}} = useForm<IssueFormData>({
-        resolver: zodResolver(createIssueSchema)
+        resolver: zodResolver(issueSchema)
     });
     const [error, setError] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -34,8 +33,12 @@ const IssueForm = ({issue}: {issue?: Issue}) => {
     const onSubmit = handleSubmit(async (data) => {
         try {
             setIsSubmitting(true);
-            await axios.post("/api/issues", data);
+            if (issue)
+                await axios.patch('/api/issues/' + issue.id, data)
+            else
+                await axios.post("/api/issues", data);
             router.push('/issues');
+            router.refresh();
         } catch (error) {
             setIsSubmitting(false);
             setError('An unexpected error occurred.');
@@ -60,7 +63,9 @@ const IssueForm = ({issue}: {issue?: Issue}) => {
                 />
                 <ErrorMessage>{errors.description?.message}</ErrorMessage>
                 <Button disabled={isSubmitting}>
-                    Submit New Issue {isSubmitting && <Spinner/>}
+                    {issue ? 'Update Issue' : 'Submit New Issue'}
+                    {' '}
+                    {isSubmitting && <Spinner/>}
                 </Button>
             </form>
         </div>
