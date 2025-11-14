@@ -1,4 +1,7 @@
 @import "tailwindcss";
+.rt-Button {
+    cursor: pointer;
+}
 
 :root {
     --background: #ffffff;
