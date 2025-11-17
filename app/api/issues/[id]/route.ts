@@ -6,12 +6,11 @@ import authOptions from "@/app/auth/authOptions";
 
 export async function PATCH(
     request: NextRequest,
-    {params}: {params: Promise<{ id: string }>}) {
+    context: {params: Promise<{ id: string }>}) {
 
+    const {id} = await context.params
     const session = await getServerSession(authOptions);
-    if (!session) {
-        return NextResponse.json({}, {status: 401})
-    }
+    if (!session) return NextResponse.json({}, {status: 401})
 
     const body = await request.json();
     const validation = patchIssueSchema.safeParse(body);
@@ -26,7 +25,6 @@ export async function PATCH(
             return NextResponse.json({error: 'Invalid user.'}, {status: 400})
     }
 
-    const { id } = await params;
     const issue = await prisma.issue.findUnique({
         where: {id: parseInt(id)}
     })
@@ -48,14 +46,12 @@ export async function PATCH(
 
 export async function DELETE(
     request: NextRequest,
-    {params}: {params: Promise<{ id: string }>}) {
+    context: {params: Promise<{ id: string }>}) {
 
+    const {id} = await context.params
     const session = await getServerSession(authOptions);
-    if (!session) {
-        return NextResponse.json({}, {status: 401})
-    }
+    if (!session) return NextResponse.json({}, {status: 401})
 
-    const { id } = await params;
     const issue = await prisma.issue.findUnique({
         where: {id: parseInt(id)}
     });
