@@ -1,40 +1,94 @@
 'use client';
 
-import React from 'react';
 import Link from "next/link";
 import { SiOpenbugbounty } from "react-icons/si";
 import {usePathname} from "next/navigation";
 import classnames from "classnames";
+import {useSession} from "next-auth/react";
+import {Box, Container, DropdownMenu, Flex, Avatar, Text} from "@radix-ui/themes";
+import Skeleton from "@/app/components/Skeleton";
 
 const NavBar = () => {
+
+    return (
+        <nav className="border-b mb-5 px-5 py-3">
+            <Container>
+                <Flex justify='between'>
+                    <Flex align='center' gap='3'>
+                        <Link
+                            href="/"
+                            className='flex items-center mr-2 text-2xl font-bold'>
+                            <SiOpenbugbounty/>
+                            Hunter
+                        </Link>
+                        <NavLinks/>
+                    </Flex>
+                    <AuthStatus/>
+                </Flex>
+            </Container>
+        </nav>
+    );
+};
+
+const NavLinks = () => {
     const currentPath = usePathname();
 
     const links = [
         {label: 'Dashboard', href: '/'},
         {label: 'Issues', href: '/issues/list'}
-    ]
+    ];
+
     return (
-        <nav className="flex space-x-6 border-b mb-5 px-5 h-14 items-center">
-            <Link href="/" className='flex items-center mr-20 text-2xl font-bold'><SiOpenbugbounty/>Hunter</Link>
-            <ul className="flex space-x-6">
-                {links.map(link =>
+        <ul className="flex space-x-6">
+            {links.map(link =>
+                <li key={link.href}>
                     <Link
-                        key={link.href}
                         className={classnames({
-                            'text-zinc-900': link.href === currentPath,
-                            'text-zinc-500': link.href !== currentPath,
-                            'hover:text-zinc-800': true
+                            'nav-link:' : true,
+                            '!text-zinc-900': link.href === currentPath,
                         })}
                         href={link.href}
                     >
                         {link.label}
-                    </Link>)
-                }
+                    </Link>
+                </li>)
+            }
+        </ul>
+    )
+}
 
-            </ul>
+const AuthStatus = () => {
+    const {status, data: session} = useSession();
 
-        </nav>
-    );
-};
+    if (status === "loading") return <Skeleton width='3rem'/>;
+
+    if (status === "unauthenticated")
+        return <Link className="nav-link" href="/api/auth/signin">Login</Link>;
+
+    return (
+        <Box>
+            <DropdownMenu.Root>
+                <DropdownMenu.Trigger>
+                    <Avatar
+                        src={session!.user!.image!}
+                        fallback='?'
+                        size='2'
+                        radius='full'
+                        className='cursor-pointer'
+                        referrerPolicy='no-referrer'
+                    />
+                </DropdownMenu.Trigger>
+                <DropdownMenu.Content>
+                    <DropdownMenu.Label>
+                        <Text size='2'>{session!.user!.email!}</Text>
+                    </DropdownMenu.Label>
+                    <DropdownMenu.Item>
+                        <Link href="/api/auth/signout">Logout</Link>
+                    </DropdownMenu.Item>
+                </DropdownMenu.Content>
+            </DropdownMenu.Root>
+        </Box>
+    )
+}
 
 export default NavBar;
