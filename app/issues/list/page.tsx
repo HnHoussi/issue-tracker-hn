@@ -1,25 +1,16 @@
-import { Table } from "@radix-ui/themes";
 import prisma from "@/lib/prisma";
-import { IssueStatusBadge } from "@/app/components";
 import IssueActions from "@/app/issues/list/IssueActions";
-import { Status } from "@/app/generated/prisma/enums";
-import { Issue } from "@/app/generated/prisma/client";
-import NextLink from "next/link";
-import Link from "@/app/components/Link";
-import { ArrowUpIcon } from "@radix-ui/react-icons";
+import { Status, Issue } from "@/app/generated/prisma/client";
+import Pagination from "@/app/components/Pagination";
+import IssueTable from "./IssueTable";
+import {Flex} from "@radix-ui/themes";
 
 interface Props {
-    searchParams: Promise<{ status?: Status; orderBy?: keyof Issue }>;
+    searchParams: Promise<{ status?: Status; orderBy?: keyof Issue; page: string }>;
 }
 
 const IssuesPage = async ({ searchParams }: Props) => {
-    const params = await searchParams; // IMPORTANT FIX
-
-    const columns = [
-        { label: "Issue", value: "title" as keyof Issue },
-        { label: "Status", value: "status" as keyof Issue, className: "hidden md:table-cell" },
-        { label: "Created", value: "createdAt" as keyof Issue, className: "hidden md:table-cell" },
-    ];
+    const params = await searchParams;
 
     // Prisma enum statuses
     const prismaStatuses = Object.values(Status);
@@ -31,62 +22,50 @@ const IssuesPage = async ({ searchParams }: Props) => {
             : undefined;
 
     // Validate orderBy
-    const validOrderByKeys = ["id", "title", "description", "status", "createdAt", "updatedAt"] as (keyof Issue)[];
-    const orderBy: keyof Issue = validOrderByKeys.includes(params.orderBy!)
-        ? params.orderBy!
-        : "createdAt";
+    const validOrderByKeys: (keyof Issue)[] = [
+        "id",
+        "title",
+        "description",
+        "status",
+        "createdAt",
+        "updatedAt"
+    ];
 
-    const issues = await prisma.issue.findMany({
-        where: statusFilter ? { status: statusFilter } : undefined,
-        orderBy: { [orderBy]: "asc" },
-    });
+    const orderBy: keyof Issue =
+        params.orderBy && validOrderByKeys.includes(params.orderBy)
+            ? params.orderBy
+            : "createdAt";
+
+    const pageSize = 10;
+    const page = params.page ? parseInt(params.page) : 1;
+
+    const [issues, issueCount] = await Promise.all([
+        prisma.issue.findMany({
+            where: statusFilter ? { status: statusFilter } : undefined,
+            orderBy: { [orderBy]: "asc" },
+            skip: (page - 1) * pageSize,
+            take: pageSize,
+        }),
+        prisma.issue.count({
+            where: statusFilter ? { status: statusFilter } : undefined,
+        }),
+    ]);
 
     return (
-        <div>
+        <Flex direction="column" gap='4'>
             <IssueActions />
-            <Table.Root variant="surface">
-                <Table.Header>
-                    <Table.Row>
-                        {columns.map((column) => (
-                            <Table.ColumnHeaderCell key={column.value} className={column.className}>
-                                <NextLink
-                                    href={{
-                                        pathname: "/issues/list",
-                                        query: {
-                                            ...(statusFilter && { status: statusFilter }),
-                                            orderBy: column.value,
-                                        },
-                                    }}
-                                >
-                                    {column.label}
-                                </NextLink>
 
-                                {column.value === orderBy && <ArrowUpIcon className="inline ml-1" />}
-                            </Table.ColumnHeaderCell>
-                        ))}
-                    </Table.Row>
-                </Table.Header>
+            <IssueTable
+                searchParams={params}
+                issues={issues}
+            />
 
-                <Table.Body>
-                    {issues.map((issue) => (
-                        <Table.Row key={issue.id}>
-                            <Table.Cell>
-                                <Link href={`/issues/${issue.id}`}>{issue.title}</Link>
-                                <div className="block md:hidden">
-                                    <IssueStatusBadge status={issue.status} />
-                                </div>
-                            </Table.Cell>
-                            <Table.Cell className="hidden md:table-cell">
-                                <IssueStatusBadge status={issue.status} />
-                            </Table.Cell>
-                            <Table.Cell className="hidden md:table-cell">
-                                {issue.createdAt.toDateString()}
-                            </Table.Cell>
-                        </Table.Row>
-                    ))}
-                </Table.Body>
-            </Table.Root>
-        </div>
+            <Pagination
+                itemCount={issueCount}
+                pageSize={pageSize}
+                currentPage={page}
+            />
+        </Flex>
     );
 };
 
