@@ -16,8 +16,12 @@ const IssueDetailPage = async ({ params }: Props) => {
     const session = await getServerSession(authOptions);
 
     const { id } = await params;
+    const issueId = parseInt(id);
+
+    if (isNaN(issueId)) notFound();
+
     const issue = await prisma.issue.findUnique({
-        where: { id: parseInt(id) },
+        where: { id: issueId },
     });
 
     if (!issue)
